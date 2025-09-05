@@ -1,0 +1,25 @@
+{
+  "name": "sensor_data",
+  "fields": [
+    {
+      "name": "temperature",
+      "type": "float",
+      "unit": "Celsius"
+    },
+    {
+      "name": "humidity",
+      "type": "float",
+      "unit": "%"
+    },
+    {
+      "name": "pressure",
+      "type": "uint32",
+      "unit": "Pa"
+    },
+    {
+      "name": "light_intensity",
+      "type": "uint16",
+      "unit": "lux"
+    }
+  ]
+}
