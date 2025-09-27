@@ -43,6 +43,7 @@ class DataUnpacker:
                 
             if header_pos > 0:
                 # 丢弃帧头之前的数据
+                # Python 的切片语法，表示 “从列表开头（索引 0）到 header_pos 之前的所有元素”
                 del self.buffer[:header_pos]
                 
             if len(self.buffer) < self.min_frame_len:
@@ -67,6 +68,7 @@ class DataUnpacker:
                 
         return frames
         
+    # 将二进制数据流按固定格式解析为结构化的字典
     def _parse_frame(self, frame_data):
         """解析单个帧数据"""
         try:
@@ -110,11 +112,11 @@ class DataParser:
         根据数据描述信息解析二进制数据
         data_description: JSON格式的数据描述
         """
-        result = {}
-        offset = 0
+        result = {}    # 空字典，用于存储最终解析后的结构化数据
+        offset = 0     # 标记当前解析到二进制数据的哪个位置
         
         try:
-            for field in data_description.get('fields', []):
+            for field in data_description.get('fields', []):     # 每个元素 field 是一个字典，代表一个要解析的字段
                 field_name = field['name']
                 field_type = field['type']
                 
@@ -147,8 +149,12 @@ class HTTPDataHandler(BaseHTTPRequestHandler):
         """处理POST请求"""
         try:
             # 获取数据长度
+            # self.headers 是一个字典，包含当前 HTTP 请求的所有头部信息
+            # Content-Length 头部指定了 POST 请求体的字节长度，通过它可以确定需要读取多少数据
             content_length = int(self.headers['Content-Length'])
+
             # 读取数据
+            # self.rfile 是一个类文件对象，代表读取请求体数据（二进制模式）
             post_data = self.rfile.read(content_length)
             
             # 将数据放入队列
@@ -157,12 +163,13 @@ class HTTPDataHandler(BaseHTTPRequestHandler):
             
             # 发送响应
             self.send_response(200)
+            # 发送响应头部信息：这里指定 Content-type 为 application/json，告诉客户端响应体是 JSON 格式
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(b'{"status": "success"}')
         except Exception as e:
             print(f"处理POST请求时出错: {e}")
-            self.send_response(500)
+            self.send_response(400)
             self.end_headers()
             
     def do_GET(self):
@@ -220,7 +227,7 @@ class RealTimeDataProcessor:
         self.data_description = description
         
     def start_server(self, port=8080):
-        """启动HTTP服务器"""
+        """启动HTTP服务器, 监听指定端口"""
         if self.server_thread and self.server_thread.is_alive():
             return False
             
@@ -230,9 +237,10 @@ class RealTimeDataProcessor:
             self.server.server_port = port
             self.running = True
             
+            # 启动服务器线程处理HTTP请求
             self.server_thread = threading.Thread(target=self.server.serve_forever)
             self.server_thread.daemon = True
-            self.server_thread.start()
+            self.server_thread.start()  
             
             # 启动数据处理线程
             self.process_thread = threading.Thread(target=self._process_data)
@@ -260,10 +268,10 @@ class RealTimeDataProcessor:
         while self.running:
             try:
                 # 从队列获取数据
-                data = self.data_queue.get(timeout=0.1)
-                # 添加到解包器
+                data = self.data_queue.get(timeout=0.1)   # 持续检查是否有新数据到达（使用0.1秒超时）
+                # 将接收到的数据添加到解包器缓冲区
                 self.unpacker.add_data(data)
-                # 提取帧
+                # 提取完整数据帧
                 frames = self.unpacker.extract_frames()
                 
                 # 处理每个帧
@@ -272,7 +280,7 @@ class RealTimeDataProcessor:
                         # 解析数据
                         parsed_data = self.parser.parse_data(frame['data'], self.data_description)
                         if parsed_data:
-                            # 发送信号更新UI（线程安全）
+                            # 如果成功解析，发送信号更新UI（线程安全）
                             self.signals.data_received.emit(parsed_data, frame['timestamp'])
                             
             except Empty:
