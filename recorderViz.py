@@ -467,10 +467,10 @@ class MainWindow(QMainWindow):
                 self.status_label.setText(f"已加载描述文件: {os.path.basename(file_path)}")
                 
                 # 初始化数据系列
-                self.data_series = {}
+                self.data_series = {}   # 字典(dict) 类型
                 for field in self.data_description.get('fields', []):
                     self.data_series[field['name']] = []
-                self.timestamps = []
+                self.timestamps = []   # 列表(list) 类型
                 
                 # 清空图表
                 self.plot_widget.clear()
